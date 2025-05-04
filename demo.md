@@ -1,14 +1,18 @@
 ---
 title: "My Document 代码格式为默认"
-chapters: False
-numberSections: False
+author: "Pen2"
+chapters: True
+numberSections: True
+sectionsDepth: 3
 figureTitle: "图"
 figPrefix: "图"
-tableTitle: "表格"
+titleDelim: ""
+tableTitle: "表"
 tblPrefix: "表"
-titleDelim: " "
 autoEqnLabels: True
-
+tableTemplate: "$$tableTitle$$$$i$$$$titleDelim$$ $$t$$"
+figureTemplate: "$$figureTitle$$$$i$$$$titleDelim$$ $$t$$"
+locale: en
 ---
 # 摘要{-}
 
@@ -37,6 +41,17 @@ int main() {
 
 模板元编程的一个经典应用是通过模板进行编译时常量计算。这使得程序在运行时可以避免不必要的计算，提高效率。
 
+| 方式             | 语法示例             | 是否可修改原始变量 | 是否有拷贝开销 | 常用于                  | 特点与注意事项                                      |
+|------------------|----------------------|---------------------|----------------|---------------------------|----------------------------------------------------|
+| 按值传递         | `void f(int x)`      | 否                  | ✅ 是           | 小型内建类型             | 会复制参数，修改不会影响原始变量                    |
+| 按引用传递       | `void f(int& x)`     | ✅ 是                | ❌ 否           | 需要修改原始变量         | 直接操作原始对象，调用者可见修改                    |
+| 常量引用传递     | `void f(const int& x)` | 否                | ❌ 否           | 大对象只读               | 避免复制，保护原始对象不被修改                      |
+| 指针传递         | `void f(int* x)`     | ✅ 是（非空指针）    | ✅（视情况而定）| 需要处理可空对象         | 需检查指针有效性，可模拟引用功能                    |
+| 右值引用传递     | `void f(int&& x)`    | ✅ 是（可移动资源）  | ❌ 否（移动）   | 移动语义实现、完美转发   | 只能绑定到右值，常与 `std::move` 和模板配合使用     |
+
+: 表格示例 {#tbl:pass}
+
+我引用[@tbl:pass]
 例如，计算阶乘：
 
 ```cpp
