@@ -297,6 +297,7 @@
         <w:uiPriority w:val="9" />
         <w:rsid w:val="00DE7F4A" />
         <w:pPr>
+            <w:pageBreakBefore/>
             <w:snapToGrid w:val="0" />
             <w:spacing w:before="240" w:after="240" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
@@ -529,13 +530,13 @@
         <w:next w:val="a0" />
         <w:qFormat />
         <w:pPr>
-            <w:keepNext />
-            <w:keepLines />
-            <w:spacing w:before="100" w:after="300" />
+            <w:snapToGrid w:val="0" />
+            <w:spacing w:before="240" w:after="0"/>
+            <w:ind w:firstLineChars="0" w:firstLine="0" />
+            <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:sz w:val="20" />
-            <w:szCs w:val="20" />
+            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
         </w:rPr>
     </w:style>
     <w:style w:type="paragraph" w:styleId="a9">

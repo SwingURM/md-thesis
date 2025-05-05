@@ -136,5 +136,36 @@ for section in doc.sections:
     paragraph.style = "Header"  # 确保样式名称正确
     section.header_distance = Pt(56.7)  # 页眉距离顶部2cm
 
+
+def is_abstract_paragraph(paragraph):
+    return paragraph.style.name.lower() == 'abstract'
+
+def apply_simsun_font(run):
+    run.font.name = 'SimSun'
+    run._element.rPr.rFonts.set(qn('w:eastAsia'), 'SimSun')
+
+for para in doc.paragraphs:
+    if is_abstract_paragraph(para):
+        text = para.text.strip()
+        if text.startswith("关键词："):
+            prefix = "关键词："
+        elif text.lower().startswith("keywords:"):
+            prefix = "Keywords:"
+        else:
+            raise AssertionError(f"Abstract paragraph does not start with expected prefix: {text}")
+
+        # 清空原段落的所有 run，并重新构建
+        para.clear()
+
+        # 添加前缀部分（不改字体）
+        run_prefix = para.add_run(prefix)
+
+        # 添加其余内容，应用宋体字体
+        remaining = text[len(prefix):]
+        run_rest = para.add_run(remaining)
+        apply_simsun_font(run_rest)
+
+
+
 # 保存修改后的文档
 doc.save("output.docx")

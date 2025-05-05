@@ -1,0 +1,14 @@
+chapters: True
+numberSections: True
+sectionsDepth: 3
+figureTitle: "图"
+figPrefix: "图"
+# chapDelim: "-"
+titleDelim: ""
+tableTitle: "表"
+tblPrefix: "表"
+autoEqnLabels: True
+tableTemplate: "$$tableTitle$$$$i$$$$titleDelim$$ $$t$$"
+figureTemplate: "$$figureTitle$$$$i$$$$titleDelim$$ $$t$$"
+figPrefixTemplate: $$p$$$$i$$
+tblPrefixTemplate: $$p$$$$i$$

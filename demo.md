@@ -1,17 +1,6 @@
 ---
 title: "My Document 代码格式为默认"
 author: "Pen2"
-chapters: True
-numberSections: True
-sectionsDepth: 3
-figureTitle: "图"
-figPrefix: "图"
-titleDelim: ""
-tableTitle: "表"
-tblPrefix: "表"
-autoEqnLabels: True
-tableTemplate: "$$tableTitle$$$$i$$$$titleDelim$$ $$t$$"
-figureTemplate: "$$figureTitle$$$$i$$$$titleDelim$$ $$t$$"
 locale: en
 ---
 # 摘要{-}
