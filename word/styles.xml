@@ -756,7 +756,7 @@
                 <w:tab w:val="right" w:pos="8306" />
             </w:tabs>
             <w:snapToGrid w:val="0" />
-            <w:jc w:val="right" />
+            <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
             <w:sz w:val="21" />
@@ -786,8 +786,8 @@
             <w:snapToGrid w:val="0" />
         </w:pPr>
         <w:rPr>
-            <w:sz w:val="18" />
-            <w:szCs w:val="18" />
+            <w:sz w:val="21" />
+            <w:szCs w:val="21" />
         </w:rPr>
     </w:style>
     <w:style w:type="character" w:customStyle="1" w:styleId="af3">
