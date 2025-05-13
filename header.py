@@ -5,6 +5,7 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
+from lxml import etree
 
 
 # --- Helper Functions ---
@@ -159,6 +160,9 @@ def process_document(file_path, output_path, marker1_text=None, marker2_text=Non
 
     #
     set_abstract_font(doc)
+
+    # Format equations and numbers
+    doc = process_math_equations(doc)
 
     #
     replace_figure_format_in_doc(doc)
@@ -315,9 +319,9 @@ def set_headers(doc):
 
         # Add header content
         if i < 2:  # First two sections
-            paragraph.add_run("这是页眉内容 ")
+            paragraph.add_run(TITLE + " ")
         else:  # Third section and beyond
-            run = paragraph.add_run("这是页眉内容 ")
+            run = paragraph.add_run(TITLE + " ")
 
             # Add page number field
             fldChar1 = OxmlElement("w:fldChar")
@@ -368,32 +372,105 @@ def set_abstract_font(doc):
             run_rest = paragraph.add_run(remaining)
             apply_simsun_font(run_rest)
 
+
 def replace_figure_format_in_doc(doc):
     """
-    Replace all occurrences of '图%d.%d' with '图%d-%d' in the entire Word document.
+    Replace all occurrences of '图%d.%d' with '图%d-%d' in the entire Word document
+    while preserving oMath elements and other formatting.
     """
-    # Iterate through all paragraphs in the document
+    figure_pattern = re.compile(r"图(\d+)\.(\d+)")
+    
     for paragraph in doc.paragraphs:
-        if paragraph.text:
-            # Replace text in the paragraph
-            paragraph.text = re.sub(r"图(\d+)\.(\d+)", r"图\1-\2", paragraph.text)
+        # Skip empty paragraphs or paragraphs with math elements
+        # Confusing
+        if not paragraph.text or "<m:oMath" in paragraph._p.xml:
+            continue
+            
+        # Process the paragraph run by run to preserve formatting
+        for run in paragraph.runs:
+            if run.text and "图" in run.text:
+                run.text = figure_pattern.sub(r"图\1-\2", run.text)
 
-    # Iterate through all tables in the document
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                for paragraph in cell.paragraphs:
-                    if paragraph.text:
-                        # Replace text in the table cell
-                        paragraph.text = re.sub(
-                            r"图(\d+)\.(\d+)", r"图\1-\2", paragraph.text
-                        )
+def process_math_equations(doc):
+    """
+    Locate and format all oMathParagraph elements in the document.
+    - Add right-aligned tab stop
+    - Structure with equation, tab, and number
+    - Detect and extract equation numbers in format (d.d)
+    """
+    print("\n=== STARTING MATH PARAGRAPH DETECTION AND FORMATTING ===")
+    math_para_count = 0
+    equation_pattern = re.compile(r"\((\d+)\.(\d+)\)")
+    
+    for i, paragraph in enumerate(doc.paragraphs):
+        # Check if paragraph contains math paragraph elements
+        if "<m:oMathPara" in paragraph._p.xml:
+            math_para_count += 1
+            print(f"\n--- Math Paragraph #{math_para_count} found in paragraph {i} ---")
+            
+            
+            # Format the paragraph with oMathPara
+            format_math_paragraph(paragraph)
+            
+    
+    
+    total_count = math_para_count
+    print(f"\n=== COMPLETED MATH ELEMENT FORMATTING: {math_para_count} oMathPara elements formatted ===\n")
+    return doc
 
+
+def format_math_paragraph(paragraph, equation_number="replace_me"):
+    """
+    Format a paragraph containing oMathPara with proper style and equation numbering.
+    
+    Args:
+        paragraph: The paragraph containing the math element
+        equation_number: The sequential number to assign to this equation
+    """
+    try:
+        # Set paragraph style to FormulaEquationNumbered
+        paragraph.style = "FormulaEquationNumbered"
+        
+        # Add the equation number in parentheses after a tab
+        # First get the XML element
+        p_xml = paragraph._element
+        
+        # Check if there's already a run with the equation number
+        # We don't want to add it twice if this function is called multiple times
+        has_eq_number = False
+        for run in paragraph.runs:
+            if f"({equation_number})" in run.text:
+                has_eq_number = True
+                break
+                
+        if not has_eq_number:
+            # Create a run element for the tab and equation number
+            run_xml = create_element("w:r")
+            
+            # Add a tab character
+            tab_xml = create_element("w:tab")
+            run_xml.append(tab_xml)
+            
+            # Add the equation number in parentheses
+            text_xml = create_element("w:t")
+            text_xml.text = f"（{equation_number}）"
+            run_xml.append(text_xml)
+            
+            # Append the new run to the paragraph
+            p_xml.append(run_xml)
+            
+        print(f"Applied 'FormulaEquationNumbered' style with equation number {equation_number}")
+        return True
+    except Exception as e:
+        print(f"Error formatting math paragraph: {e}")
+        return False
+
+TITLE = "面向"
 
 # --- Entry Point ---
 if __name__ == "__main__":
-    input_docx_path = "open.docx"
-    output_docx_path = "open.docx"
+    input_docx_path = "output.docx"
+    output_docx_path = "output.docx"
     marker1_text = "%%%SECTION_BREAK_1%%%"
     marker2_text = "%%%SECTION_BREAK_2%%%"
     process_document(input_docx_path, output_docx_path, marker1_text, marker2_text)

@@ -7,8 +7,10 @@ figPrefix: "图"
 titleDelim: ""
 tableTitle: "表"
 tblPrefix: "表"
+eqnPrefix: "式"
 autoEqnLabels: True
 tableTemplate: "$$tableTitle$$$$i$$$$titleDelim$$ $$t$$"
 figureTemplate: "$$figureTitle$$$$i$$$$titleDelim$$ $$t$$"
 figPrefixTemplate: $$p$$$$i$$
 tblPrefixTemplate: $$p$$$$i$$
+eqnPrefixTemplate: $$p$$$$i$$

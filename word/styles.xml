@@ -806,4 +806,21 @@
             <w:szCs w:val="18" />
         </w:rPr>
     </w:style>
+    <w:style w:type="paragraph" w:styleId="FormulaEquationNumbered">
+        <w:name w:val="Formula Equation Numbered" />
+        <w:basedOn w:val="a0" /> <!-- 继承自 styleId 'a0' -->
+        <w:next w:val="Normal" /> <!-- 按回车后恢复为Normal样式 -->
+        <w:locked w:val="false" />
+        <w:qFormat /> <!-- 在样式库中显示 -->
+        <w:pPr>
+            <w:tabs>
+                <!-- 第二个制表位：大约42字符处（接近右边距），右对齐 -->
+                <w:tab w:val="right" w:pos="8820" />
+            </w:tabs>
+        </w:pPr>
+        <w:rPr>
+            <w:sz w:val="21" />
+            <w:szCs w:val="21" />
+        </w:rPr>
+    </w:style>
 </w:styles>
