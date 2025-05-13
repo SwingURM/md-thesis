@@ -1,9 +1,10 @@
+import re
+
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
-import re
 
 
 # --- Helper Functions ---
@@ -113,7 +114,6 @@ def add_toc(document, marker_text="PLACE_TOC_HERE"):
     try:
         toc_title_paragraph = target_paragraph.insert_paragraph_before(
             "Table of Contents", style="TOC Heading"
-
         )
         toc_field_paragraph = target_paragraph.insert_paragraph_before("")
         run = toc_field_paragraph.add_run()
@@ -253,42 +253,10 @@ def process_table(table):
         tcBorders.append(bottomBorder)
         tcPr.append(tcBorders)
 
-        # Set cell shading
-        shd = create_element("w:shd")
-        create_attribute(shd, "w:val", "clear")
-        create_attribute(shd, "w:color", "auto")
-        create_attribute(shd, "w:fill", "auto")
-        tcPr.append(shd)
-
     # Set column width and apply paragraph and text style
     for column in table.columns:
         for cell in column.cells:
             cell.width = Pt(column_width_twips / 20)  # Convert to points
-
-            # Set paragraph properties
-            pPr = create_element("w:pPr")
-            snapToGrid = create_element("w:snapToGrid")
-            create_attribute(snapToGrid, "w:val", "0")
-            pPr.append(snapToGrid)
-
-            ind = create_element("w:ind")
-            create_attribute(ind, "w:firstLine", "480")
-            pPr.append(ind)
-
-            jc = create_element("w:jc")
-            create_attribute(jc, "w:val", "center")
-            pPr.append(jc)
-
-            rPr = create_element("w:rPr")
-            sz = create_element("w:sz")
-            create_attribute(sz, "w:val", "21")
-            rPr.append(sz)
-
-            # Apply paragraph properties and text style
-            for paragraph in cell.paragraphs:
-                paragraph._p.insert(0, pPr)
-                for run in paragraph.runs:
-                    run._r.insert(0, rPr)
 
 
 def set_page_number_for_all_secs(doc):
@@ -323,6 +291,7 @@ def set_page_number_for_all_secs(doc):
         section3.footer.is_linked_to_previous = False
         set_page_number_style(section3, fmt="decimal", start=1)
 
+
 def set_headers(doc):
     """
     Set headers for all sections in the document.
@@ -356,7 +325,9 @@ def set_headers(doc):
             run._r.append(fldChar1)
 
             instrText = OxmlElement("w:instrText")
-            instrText.set(qn("xml:space"), "preserve")  # Avoid truncation of field instructions
+            instrText.set(
+                qn("xml:space"), "preserve"
+            )  # Avoid truncation of field instructions
             instrText.text = "PAGE \\* MERGEFORMAT"
             run._r.append(instrText)
 
@@ -370,12 +341,13 @@ def set_headers(doc):
         # Set header distance
         section.header_distance = Pt(56.7)  # Header distance from the top (2 cm)
 
+
 def add_page_number_to_footer(section):
     """Add page number to the footer of a section."""
     footer = section.footer
     paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    paragraph.style = 'footer'
+    paragraph.style = "footer"
     add_page_number_field(paragraph)
 
 
@@ -392,7 +364,7 @@ def set_abstract_font(doc):
                 raise ValueError("Invalid abstract paragraph format.")
             paragraph.clear()
             run_prefix = paragraph.add_run(prefix)
-            remaining = text[len(prefix):]
+            remaining = text[len(prefix) :]
             run_rest = paragraph.add_run(remaining)
             apply_simsun_font(run_rest)
 
@@ -413,7 +385,10 @@ def replace_figure_format_in_doc(doc):
                 for paragraph in cell.paragraphs:
                     if paragraph.text:
                         # Replace text in the table cell
-                        paragraph.text = re.sub(r"图(\d+)\.(\d+)", r"图\1-\2", paragraph.text)
+                        paragraph.text = re.sub(
+                            r"图(\d+)\.(\d+)", r"图\1-\2", paragraph.text
+                        )
+
 
 # --- Entry Point ---
 if __name__ == "__main__":

@@ -297,7 +297,7 @@
         <w:uiPriority w:val="9" />
         <w:rsid w:val="00DE7F4A" />
         <w:pPr>
-            <w:pageBreakBefore/>
+            <w:pageBreakBefore />
             <w:snapToGrid w:val="0" />
             <w:spacing w:before="240" w:after="240" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
@@ -407,8 +407,14 @@
         <w:basedOn w:val="a0" />
         <w:qFormat />
         <w:pPr>
-            <w:spacing w:before="36" w:after="36" />
+            <w:snapToGrid w:val="0" />
+            <w:ind w:firstLine="480" />
+            <w:jc w:val="center" />
         </w:pPr>
+        <w:rPr>
+            <w:sz w:val="21" />
+            <w:szCs w:val="21" />
+        </w:rPr>
     </w:style>
     <w:style w:type="paragraph" w:styleId="a4">
         <w:name w:val="Title" />
@@ -531,7 +537,7 @@
         <w:qFormat />
         <w:pPr>
             <w:snapToGrid w:val="0" />
-            <w:spacing w:before="240" w:after="0"/>
+            <w:spacing w:before="240" w:after="0" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
             <w:jc w:val="left" />
         </w:pPr>
