@@ -45,10 +45,12 @@ def set_page_number_style(section, fmt="decimal", start=None):
         sectPr.append(pgNumType)
 
 
-def apply_simsun_font(run):
+def apply_simsun_tnr_font(run):
     """Apply SimSun font to a run."""
     run.font.name = "SimSun"
     run._element.rPr.rFonts.set(qn("w:eastAsia"), "SimSun")
+    run._element.rPr.rFonts.set(qn("w:ascii"), "Times New Roman")
+    run._element.rPr.rFonts.set(qn("w:hAnsi"), "Times New Roman")
 
 
 def copy_sectPr_properties(source_sectPr, target_sectPr):
@@ -114,7 +116,7 @@ def add_toc(document, marker_text="PLACE_TOC_HERE"):
 
     try:
         toc_title_paragraph = target_paragraph.insert_paragraph_before(
-            "Table of Contents", style="TOC Heading"
+            "目录", style="TOC Heading"
         )
         toc_field_paragraph = target_paragraph.insert_paragraph_before("")
         run = toc_field_paragraph.add_run()
@@ -163,6 +165,9 @@ def process_document(file_path, output_path, marker1_text=None, marker2_text=Non
 
     # Format equations and numbers
     doc = process_math_equations(doc)
+
+
+    doc = style_superscript_hyperlinks(doc)
 
     #
     replace_figure_format_in_doc(doc)
@@ -370,7 +375,7 @@ def set_abstract_font(doc):
             run_prefix = paragraph.add_run(prefix)
             remaining = text[len(prefix) :]
             run_rest = paragraph.add_run(remaining)
-            apply_simsun_font(run_rest)
+            apply_simsun_tnr_font(run_rest)
 
 
 def replace_figure_format_in_doc(doc):
@@ -464,6 +469,62 @@ def format_math_paragraph(paragraph, equation_number="replace_me"):
     except Exception as e:
         print(f"Error formatting math paragraph: {e}")
         return False
+
+def style_superscript_hyperlinks(doc, style_name="ae"):
+    """
+    Find all hyperlinked text that is also superscript and apply a specific style.
+    
+    Args:
+        doc: The Word document
+        style_name: The style to apply to superscript hyperlinks
+    """
+    print("\n=== IDENTIFYING AND STYLING SUPERSCRIPT HYPERLINKS ===")
+    count = 0
+    
+    # Iterate through all paragraphs in the document
+    for paragraph in doc.paragraphs:
+        # Get the XML of the paragraph
+        p_xml = paragraph._element
+        
+        # Find all hyperlinks in this paragraph
+        hyperlinks = p_xml.findall(".//w:hyperlink", namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+        
+        for hyperlink in hyperlinks:
+            # Find runs within this hyperlink
+            runs_in_link = hyperlink.findall(".//w:r", namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+            
+            for run_xml in runs_in_link:
+                # Check if this run has superscript formatting
+                rPr = run_xml.find(".//w:rPr", namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+                if rPr is not None:
+                    vert_align = rPr.find(".//w:vertAlign[@w:val='superscript']", 
+                                         namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+                    
+                    if vert_align is not None:
+                        # This run is both hyperlinked and superscript!
+                        count += 1
+                        
+                        # Get the text content for logging
+                        text_elements = run_xml.findall(".//w:t", 
+                                                      namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+                        text_content = "".join([t.text for t in text_elements if t.text])
+                        
+                        # Apply the specified style
+                        style_element = create_element("w:rStyle")
+                        create_attribute(style_element, "w:val", style_name)
+                        
+                        # Add or replace the style in the run properties
+                        existing_style = rPr.find(".//w:rStyle", 
+                                                namespaces={"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"})
+                        if existing_style is not None:
+                            rPr.replace(existing_style, style_element)
+                        else:
+                            rPr.append(style_element)
+                            
+                        print(f"Applied '{style_name}' style to superscript hyperlink: '{text_content}'")
+    
+    print(f"\n=== COMPLETED: Styled {count} superscript hyperlinks with '{style_name}' style ===\n")
+    return doc
 
 TITLE = "面向"
 
