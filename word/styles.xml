@@ -830,7 +830,7 @@
             <w:szCs w:val="21" />
         </w:rPr>
     </w:style>
-    <w:style w:type="paragraph" w:styleId="21">
+    <w:style w:type="paragraph" w:styleId="22">
         <w:name w:val="TOC 2" />
         <w:basedOn w:val="a" />
         <w:next w:val="a" />
@@ -879,7 +879,7 @@
             <w:szCs w:val="28" />
         </w:rPr>
     </w:style>
-    <w:style w:type="paragraph" w:styleId="3">
+    <w:style w:type="paragraph" w:styleId="33">
         <w:name w:val="TOC 3" />
         <w:basedOn w:val="a" />
         <w:next w:val="a" />
