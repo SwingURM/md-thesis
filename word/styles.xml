@@ -24,7 +24,6 @@
         </w:rPrDefault>
         <w:pPrDefault>
             <w:pPr>
-                <w:spacing w:after="200" />
             </w:pPr>
         </w:pPrDefault>
     </w:docDefaults>
@@ -322,7 +321,7 @@
         <w:rsid w:val="00D27603" />
         <w:pPr>
             <w:snapToGrid w:val="0" />
-            <w:spacing w:before="240" />
+            <w:spacing w:before="240" w:after="0"/>
             <w:ind w:firstLineChars="0" w:firstLine="0" />
             <w:jc w:val="left" />
             <w:outlineLvl w:val="1" />
@@ -344,7 +343,7 @@
         <w:rsid w:val="00D27603" />
         <w:pPr>
             <w:snapToGrid w:val="0" />
-            <w:spacing w:before="240" />
+            <w:spacing w:before="240" w:after="0"/>
             <w:ind w:firstLineChars="0" w:firstLine="0" />
             <w:jc w:val="left" />
             <w:outlineLvl w:val="2" />
@@ -659,6 +658,7 @@
             <w:snapToGrid w:val="0" />
             <w:ind w:firstLine="480" />
             <w:jc w:val="center" />
+            <w:spacing w:before="0" w:after="0"/>
         </w:pPr>
         <w:rPr>
             <w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" />
@@ -677,6 +677,7 @@
             <w:snapToGrid w:val="0" />
             <w:ind w:firstLine="480" />
             <w:jc w:val="center" />
+            <w:spacing w:before="0" w:after="0"/>
         </w:pPr>
         <w:rPr>
             <w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" />
