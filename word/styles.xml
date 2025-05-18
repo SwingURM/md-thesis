@@ -321,7 +321,7 @@
         <w:rsid w:val="00D27603" />
         <w:pPr>
             <w:snapToGrid w:val="0" />
-            <w:spacing w:before="240" w:after="0"/>
+            <w:spacing w:before="240" w:after="0" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
             <w:jc w:val="left" />
             <w:outlineLvl w:val="1" />
@@ -343,7 +343,7 @@
         <w:rsid w:val="00D27603" />
         <w:pPr>
             <w:snapToGrid w:val="0" />
-            <w:spacing w:before="240" w:after="0"/>
+            <w:spacing w:before="240" w:after="0" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
             <w:jc w:val="left" />
             <w:outlineLvl w:val="2" />
@@ -658,7 +658,7 @@
             <w:snapToGrid w:val="0" />
             <w:ind w:firstLine="480" />
             <w:jc w:val="center" />
-            <w:spacing w:before="0" w:after="0"/>
+            <w:spacing w:before="0" w:after="0" />
         </w:pPr>
         <w:rPr>
             <w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" />
@@ -677,7 +677,7 @@
             <w:snapToGrid w:val="0" />
             <w:ind w:firstLine="480" />
             <w:jc w:val="center" />
-            <w:spacing w:before="0" w:after="0"/>
+            <w:spacing w:before="0" w:after="0" />
         </w:pPr>
         <w:rPr>
             <w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" />
@@ -696,6 +696,8 @@
         <w:basedOn w:val="Figure" />
         <w:pPr>
             <w:keepNext />
+            <w:ind w:firstLineChars="0" w:firstLine="0" />
+            <w:jc w:val="center" />
         </w:pPr>
     </w:style>
     <w:style w:type="character" w:customStyle="1" w:styleId="ad">
@@ -747,7 +749,7 @@
             <w:outlineLvl w:val="9" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
+            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
             <w:color w:val="auto" />
             <w:sz w:val="36" />
             <w:szCs w:val="36" />
@@ -823,7 +825,7 @@
         <w:pPr>
             <w:tabs>
                 <!-- 第二个制表位：大约42字符处（接近右边距），右对齐 -->
-                <w:tab w:val="right" w:pos="8820" />
+                <w:tab w:val="right" w:pos="9600" />
             </w:tabs>
         </w:pPr>
         <w:rPr>
@@ -849,7 +851,7 @@
             <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
+            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
             <w:noProof />
             <w:kern w:val="0" />
             <w:szCs w:val="24" />
@@ -873,7 +875,7 @@
             <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
+            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
             <w:noProof />
             <w:kern w:val="0" />
             <w:sz w:val="28" />
@@ -898,7 +900,7 @@
             <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
+            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
             <w:noProof />
             <w:kern w:val="0" />
             <w:sz w:val="21" />
