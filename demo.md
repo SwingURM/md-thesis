@@ -1,11 +1,32 @@
 ---
-title: "My Document 代码格式为默认"
-author: "Pen2"
 locale: en
+link-citations: true
 ---
 # 摘要{-}
 
 C++模板元编程（Template Metaprogramming）是一种利用C++模板系统进行编程的技术。通过在编译时进行计算和推导，模板元编程使得程序在运行时更高效，同时也能使程序更加灵活和通用。它常用于类型推导、编译时常量计算、静态断言和优化等方面。本文将详细介绍C++模板元编程的基础概念、常见技巧以及实际应用。
+
+:::{custom-style="Abstract"}
+
+| 关键词：身在止境，渴望的魅力，阿瓦隆妖精
+
+:::
+
+# **Abstract**{-}
+
+mole.
+
+:::{custom-style="Abstract"}
+
+| Keywords:Damn, keyword2
+
+:::
+
+%%%SECTION_BREAK_1%%%
+
+PLACE_TOC_HERE
+
+%%%SECTION_BREAK_2%%%
 
 # 什么是模板元编程？
 
@@ -40,7 +61,7 @@ int main() {
 
 : 表格示例 {#tbl:pass}
 
-我引用[@tbl:pass]
+我引用[@tbl:pass]。
 例如，计算阶乘：
 
 ```cpp
@@ -184,9 +205,11 @@ struct Factorial<0> {
 
 ## 斐波那契数列
 
-斐波那契数列的公式为：
+斐波那契数列的公式见[@eq:fibo]。
 
-$$F(n)=F(n−1)+F(n−2) $$
+$$
+F(n)=F(n−1)+F(n−2) 
+$$ {#eq:fibo}
 
 其中，F(0)=0，F(1)=1。
 
@@ -216,3 +239,12 @@ struct Fibonacci<1> {
 # 结论
 
 C++模板元编程是一种强大的编程技术，能够在编译时进行高效的计算和类型推导，提升程序的性能和可维护性。通过模板特化、SFINAE、递归模板等技巧，开发者可以实现更加复杂和高效的编程模式。然而，模板元编程的复杂性也意味着它需要较高的学习曲线。掌握它的应用对于编写高效、通用和可扩展的C++代码至关重要。
+
+# 参考文献{-}
+
+::: {#refs}
+:::
+
+# 致谢{-}
+
+我能学会vfs[@vfs]吗？

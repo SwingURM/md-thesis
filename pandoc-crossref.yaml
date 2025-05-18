@@ -14,6 +14,7 @@ figureTemplate: "$$figureTitle$$$$i$$$$titleDelim$$ $$t$$"
 figPrefixTemplate: $$p$$$$i$$
 tblPrefixTemplate: $$p$$$$i$$
 eqnPrefixTemplate: $$p$$$$i$$
+# 下面这个公式排版方案，不纠结公式序号字体的人完全可以直接使用这个
 # tableEqns: true
 # eqnBlockTemplate: |
 #    `<w:pPr><w:tabs><w:tab w:val="right" w:leader="none" w:pos="9360" /></w:tabs></w:pPr>`{=openxml} $$t$$ `<w:r><w:tab /></w:r>`{=openxml}$$i$$
