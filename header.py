@@ -424,11 +424,6 @@ def replace_figure_format_in_doc(doc):
     figure_pattern = re.compile(r"图(\d+)\.(\d+)")
 
     for paragraph in doc.paragraphs:
-        # Skip empty paragraphs or paragraphs with math elements
-        # Confusing
-        if not paragraph.text or "<m:oMath" in paragraph._p.xml:
-            continue
-
         # Process the paragraph run by run to preserve formatting
         for run in paragraph.runs:
             if run.text and "图" in run.text:
