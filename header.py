@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -570,18 +571,18 @@ if __name__ == "__main__":
     INPUT = "demo.md"
     REF_FILE = "cppref.bib"
     output = f"{TITLE}-generated.docx"
-    assert (
-        os.system(
-            "7z a -tzip reference.docx [Content_Types].xml _rels word docProps customXml"
-        )
-        == 0
-    ), "7z execution failed"
+
+    shutil.make_archive("reference", "zip", "reference")
+    if os.path.exists("reference.docx"):
+        os.remove("reference.docx")
+    os.rename("reference.zip", "reference.docx")
     assert (
         os.system(
             f"pandoc {INPUT} -o {output} --filter pandoc-crossref --reference-doc reference.docx --citeproc --csl GB-T-7714—2015（顺序编码，双语，姓名不大写，无URL、DOI，引注有页码）.csl --bibliography {REF_FILE}"
         )
         == 0
     ), "pandoc execution failed"
+
     doc = Document(output)
     assert doc is not None, "Failed to load the document"
     process_document(doc)
