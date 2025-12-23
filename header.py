@@ -1,3 +1,4 @@
+import os
 import re
 
 from docx import Document
@@ -5,6 +6,9 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
+
+TITLE = "面向优秀论文标准的研究"
+statistics_data = {}
 
 
 # --- Helper Functions ---
@@ -83,41 +87,26 @@ def copy_sectPr_properties(source_sectPr, target_sectPr):
 
 def add_next_page_section_break(paragraph):
     """Add a next-page section break to a paragraph."""
-    if paragraph is None:
-        print("Error: Specified paragraph not found.")
-        return False
+    assert paragraph is not None, "Paragraph cannot be None"
 
-    print(f"Adding section break to paragraph: '{paragraph.text[:30]}...'")
     p_element = paragraph._p
     pPr = p_element.get_or_add_pPr()
 
-    sectPr = pPr.find(qn("w:sectPr"))
-    if sectPr is None:
-        sectPr = create_element("w:sectPr")
-        pPr.append(sectPr)
-
-        # Try to copy properties from the last section
-        try:
-            doc = paragraph._parent.part.document
-            last_section_sectPr = doc.sections[-1]._sectPr
-            print("Found last section to copy properties from")
-            copy_sectPr_properties(last_section_sectPr, sectPr)
-            # print sectPr
-
-        except Exception as e:
-            print(f"Warning: Unable to copy page settings: {e}")
+    assert pPr.find(qn("w:sectPr")) is None, "Paragraph already has a sectPr"
+    sectPr = create_element("w:sectPr")
+    pPr.append(sectPr)
 
     # Set section break type to next page
     type_element = sectPr.find(qn("w:type"))
-    if type_element is None:
-        type_element = create_element("w:type")
-        sectPr.append(type_element)
+    assert type_element is None, "Paragraph already has a type element"
+    type_element = create_element("w:type")
+    sectPr.append(type_element)
     create_attribute(type_element, "w:val", "nextPage")
 
     # Clear paragraph content (as it's just a marker)
     paragraph.text = ""
-    for run in paragraph.runs:
-        p_element.remove(run._r)
+    assert len(paragraph.runs) == 1, "Paragraph must have exactly one run"
+    p_element.remove(paragraph.runs[0]._r)
 
     print("Section break added successfully with appropriate properties")
     return True
@@ -128,17 +117,18 @@ def is_abstract_paragraph(paragraph):
     return paragraph.style.name.lower() == "abstract"
 
 
-def add_toc(document, marker_text="PLACE_TOC_HERE"):
+def add_toc(document):
     """
     Insert a Table of Contents (TOC) at the location of a marker text.
     """
-    target_paragraph = next(
-        (p for p in document.paragraphs if marker_text in p.text), None
+    # find all the paragraph with style toc Heading
+    target_paragraphs = [
+        p for p in document.paragraphs if p.style.name.lower() == "toc heading"
+    ]
+    assert len(target_paragraphs) == 1, (
+        "The document must contain exactly one paragraph with the style 'TOC Heading'."
     )
-    if not target_paragraph:
-        print(f"Warning: Marker '{marker_text}' not found in the document.")
-        return
-
+    target_paragraph = target_paragraphs[0]
     try:
         toc_title_paragraph = target_paragraph.insert_paragraph_before(
             "目录", style="TOC Heading"
@@ -158,75 +148,44 @@ def add_toc(document, marker_text="PLACE_TOC_HERE"):
 
         run._r.extend([fldChar_begin, instrText, fldChar_end])
         delete_paragraph(target_paragraph)
-        print(f"TOC field inserted at the location of '{marker_text}'.")
     except Exception as e:
         print(f"Error during TOC insertion: {e}")
 
 
 # --- Main Processing ---
-def process_document(file_path, output_path, marker1_text=None, marker2_text=None):
+def process_document(doc):
     """Process the Word document."""
-    doc = Document(file_path)
 
-    # Process tables
     for table in doc.tables:
         process_table(table)
 
-    # Add TOC
     add_toc(doc)
 
-    # Insert section breaks if markers are provided
-    if marker1_text or marker2_text:
-        insert_section_breaks(doc, marker1_text, marker2_text)
+    insert_section_breaks(doc)
 
-    # Process sections
     set_page_number_for_all_secs(doc)
 
-    #
     set_headers(doc)
 
-    #
     set_abstract_font(doc)
 
-    # Format equations and numbers
-    doc = process_math_equations(doc)
+    process_math_equations(doc)
 
-    doc = style_superscript_hyperlinks(doc)
+    style_superscript_hyperlinks(doc)
 
-    #
     replace_figure_format_in_doc(doc)
 
-    # Save the modified document
-    doc.save(output_path)
-    print(f"Document saved: {output_path}")
+    force_update_fields(doc)
 
 
-def insert_section_breaks(doc, marker1_text, marker2_text):
+def insert_section_breaks(doc):
     """Insert section breaks at specified markers."""
-    marker1_paragraph = None
-    marker2_paragraph = None
 
-    for para in doc.paragraphs:
-        if marker1_text and marker1_text in para.text:
-            marker1_paragraph = para
-        if marker2_text and marker2_text in para.text:
-            marker2_paragraph = para
-
-    success1 = False
-    success2 = False
-
-    if marker1_paragraph:
-        success1 = add_next_page_section_break(marker1_paragraph)
-    else:
-        print(f"Error: Marker '{marker1_text}' not found.")
-
-    if marker2_paragraph and marker2_paragraph != marker1_paragraph:
-        success2 = add_next_page_section_break(marker2_paragraph)
-    elif marker2_text:
-        print(f"Error: Marker '{marker2_text}' not found or overlaps with marker 1.")
-
-    if not (success1 or success2):
-        print("No section breaks were successfully inserted.")
+    # find paragraphs with style "myBreak"
+    break_paragraphs = [p for p in doc.paragraphs if p.style.name.lower() == "mybreak"]
+    assert len(break_paragraphs) == 2, "目前只使用了2个分页标记，如果需要更多请修改代码"
+    for p in break_paragraphs:
+        assert add_next_page_section_break(p)
 
 
 def process_table(table):
@@ -267,9 +226,9 @@ def process_table(table):
     tblPr.append(tblAlignment)
 
     # Calculate column width
-    total_width_twips = 9286  # Total table width
+    TOTAL_WIDTH_TWIPS = 9286  # Total table width
     num_columns = len(table.columns)  # Number of columns
-    column_width_twips = total_width_twips // num_columns  # Column width
+    column_width_twips = TOTAL_WIDTH_TWIPS // num_columns  # Column width
 
     # Apply style to the first row
     first_row = table.rows[0]  # Get the first row
@@ -297,32 +256,26 @@ def set_page_number_for_all_secs(doc):
     num_sections = len(doc.sections)
     print(f"Document contains {num_sections} sections.")
 
-    if num_sections < 3:
-        print(
-            "Warning: Document has fewer than 3 sections. Ensure proper section breaks."
-        )
+    assert num_sections == 3, "Document must have at least 2 sections."
 
     # Section 1: Before TOC
-    if num_sections >= 1:
-        section1 = doc.sections[0]
-        section1.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
-        set_page_number_style(section1, fmt="upperRoman", start=1)
-        add_page_number_to_footer(section1)
+    section1 = doc.sections[0]
+    section1.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
+    set_page_number_style(section1, fmt="upperRoman", start=1)
+    add_page_number_to_footer(section1)
 
     # Section 2: TOC
-    if num_sections >= 2:
-        section2 = doc.sections[1]
-        section2.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
-        section2.footer.is_linked_to_previous = False
-        set_page_number_style(section2, fmt="upperRoman", start=1)
-        add_page_number_to_footer(section2)
+    section2 = doc.sections[1]
+    section2.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
+    section2.footer.is_linked_to_previous = False
+    set_page_number_style(section2, fmt="upperRoman", start=1)
+    add_page_number_to_footer(section2)
 
     # Section 3: After TOC
-    if num_sections >= 3:
-        section3 = doc.sections[2]
-        section3.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
-        section3.footer.is_linked_to_previous = False
-        set_page_number_style(section3, fmt="decimal", start=1)
+    section3 = doc.sections[2]
+    section3.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
+    section3.footer.is_linked_to_previous = False
+    set_page_number_style(section3, fmt="decimal", start=1)
 
 
 def set_headers(doc):
@@ -336,11 +289,8 @@ def set_headers(doc):
         # Get the header of the section
         header = section.header
 
-        # Ensure the header has at least one paragraph
-        if not header.paragraphs:
-            paragraph = header.add_paragraph()
-        else:
-            paragraph = header.paragraphs[0]
+        assert len(header.paragraphs) == 1, "Header must contain one paragraph"
+        paragraph = header.paragraphs[0]
 
         # Clear existing content in the paragraph
         for run in paragraph.runs:
@@ -439,22 +389,43 @@ def process_math_equations(doc):
     """
     print("\n=== STARTING MATH PARAGRAPH DETECTION AND FORMATTING ===")
     math_para_count = 0
-    equation_pattern = re.compile(r"\((\d+)\.(\d+)\)")
 
     for i, paragraph in enumerate(doc.paragraphs):
         # Check if paragraph contains math paragraph elements
         if "<m:oMathPara" in paragraph._p.xml:
             math_para_count += 1
-            print(f"\n--- Math Paragraph #{math_para_count} found in paragraph {i} ---")
+            # print(f"\n--- Math Paragraph #{math_para_count} found in paragraph {i} ---")
+            all_math_t = paragraph._element.xpath(".//m:t")
 
-            # Format the paragraph with oMathPara
-            format_math_paragraph(paragraph)
+            assert len(all_math_t) >= 3, "数学段落必须包含至少3个数学文本节点"
+            last_4_text = all_math_t[-4].text
+            assert last_4_text.strip("\u2001\u2003\u2000\u2002 ") == "", (
+                "数学段落的倒数第四个数学文本节点必须是空格"
+            )
+            last_3_texts = [t.text for t in all_math_t[-3:]]
+            assert last_3_texts[0] == "(" and last_3_texts[-1] == ")", (
+                "数学段落的最后三个数学文本节点必须中有'('和')'"
+            )
+            equation_number = last_3_texts[1]
+            assert re.match(r"^\d+\.\d+$", equation_number), (
+                "数学段落的倒数第三个数学文本节点必须是数字编号，格式为d.d"
+            )
+            equation_number = equation_number.replace(".", "-")
 
-    total_count = math_para_count
+            # Remove the last 4 m:t nodes
+            for t_node in all_math_t[-4:]:
+                r_node = t_node.getparent()
+
+                if r_node is not None:
+                    parent = r_node.getparent()
+                    if parent is not None:
+                        parent.remove(r_node)
+            # Format the paragraph with oMathPara, passing the discovered number
+            format_math_paragraph(paragraph, equation_number)
+
     print(
         f"\n=== COMPLETED MATH ELEMENT FORMATTING: {math_para_count} oMathPara elements formatted ===\n"
     )
-    return doc
 
 
 def format_math_paragraph(paragraph, equation_number="replace_me"):
@@ -473,33 +444,24 @@ def format_math_paragraph(paragraph, equation_number="replace_me"):
         # First get the XML element
         p_xml = paragraph._element
 
-        # Check if there's already a run with the equation number
-        # We don't want to add it twice if this function is called multiple times
-        has_eq_number = False
-        for run in paragraph.runs:
-            if f"({equation_number})" in run.text:
-                has_eq_number = True
-                break
+        # Create a run element for the tab and equation number
+        run_xml = create_element("w:r")
 
-        if not has_eq_number:
-            # Create a run element for the tab and equation number
-            run_xml = create_element("w:r")
+        # Add a tab character
+        tab_xml = create_element("w:tab")
+        run_xml.append(tab_xml)
 
-            # Add a tab character
-            tab_xml = create_element("w:tab")
-            run_xml.append(tab_xml)
+        # Add the equation number in parentheses
+        text_xml = create_element("w:t")
+        text_xml.text = f"（{equation_number}）"
+        run_xml.append(text_xml)
 
-            # Add the equation number in parentheses
-            text_xml = create_element("w:t")
-            text_xml.text = f"（{equation_number}）"
-            run_xml.append(text_xml)
+        # Append the new run to the paragraph
+        p_xml.append(run_xml)
 
-            # Append the new run to the paragraph
-            p_xml.append(run_xml)
-
-        print(
-            f"Applied 'FormulaEquationNumbered' style with equation number {equation_number}"
-        )
+        # print(
+        #     f"Applied 'FormulaEquationNumbered' style with equation number {equation_number}"
+        # )
         return True
     except Exception as e:
         print(f"Error formatting math paragraph: {e}")
@@ -581,27 +543,47 @@ def style_superscript_hyperlinks(doc, style_name="ae"):
                                 "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
                             },
                         )
-                        if existing_style is not None:
-                            rPr.replace(existing_style, style_element)
-                        else:
-                            rPr.append(style_element)
+                        assert existing_style is not None, (
+                            "Run properties must contain rStyle"
+                        )
+                        rPr.replace(existing_style, style_element)
 
-                        print(
-                            f"Applied '{style_name}' style to superscript hyperlink: '{text_content}'"
+                        statistics_data[text_content] = (
+                            statistics_data.get(text_content, 0) + 1
                         )
 
     print(
         f"\n=== COMPLETED: Styled {count} superscript hyperlinks with '{style_name}' style ===\n"
     )
-    return doc
 
 
-TITLE = "面向"
+def force_update_fields(doc):
+    """强制 Word 在打开时提示更新域（包括目录）"""
+    element = doc.settings.element
+    update_fields = OxmlElement("w:updateFields")
+    update_fields.set(qn("w:val"), "true")
+    element.append(update_fields)
+
 
 # --- Entry Point ---
 if __name__ == "__main__":
-    input_docx_path = "output.docx"
-    output_docx_path = "output.docx"
-    marker1_text = "%%%SECTION_BREAK_1%%%"
-    marker2_text = "%%%SECTION_BREAK_2%%%"
-    process_document(input_docx_path, output_docx_path, marker1_text, marker2_text)
+    INPUT = "demo.md"
+    REF_FILE = "cppref.bib"
+    output = f"{TITLE}-generated.docx"
+    assert (
+        os.system(
+            "7z a -tzip reference.docx [Content_Types].xml _rels word docProps customXml"
+        )
+        == 0
+    ), "7z execution failed"
+    assert (
+        os.system(
+            f"pandoc {INPUT} -o {output} --filter pandoc-crossref --reference-doc reference.docx --citeproc --csl GB-T-7714—2015（顺序编码，双语，姓名不大写，无URL、DOI，引注有页码）.csl --bibliography {REF_FILE}"
+        )
+        == 0
+    ), "pandoc execution failed"
+    doc = Document(output)
+    assert doc is not None, "Failed to load the document"
+    process_document(doc)
+    doc.save(output)
+    print("Output file saved as:", output)

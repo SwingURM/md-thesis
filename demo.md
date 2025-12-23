@@ -8,7 +8,7 @@ C++模板元编程（Template Metaprogramming）是一种利用C++模板系统�
 
 :::{custom-style="Abstract"}
 
-| 关键词：身在止境，渴望的魅力，阿瓦隆妖精
+| 关键词：你好，你好，你好
 
 :::
 
@@ -22,11 +22,18 @@ mole.
 
 :::
 
-%%%SECTION_BREAK_1%%%
 
-PLACE_TOC_HERE
+:::{custom-style="myBreak"}
+我是一个占位字符串，不要删我
+:::
 
-%%%SECTION_BREAK_2%%%
+:::{custom-style="TOC Heading"}
+我是一个占位字符串，不要删我
+:::
+
+:::{custom-style="myBreak"}
+我是一个占位字符串，不要删我
+:::
 
 # 什么是模板元编程？
 
@@ -232,7 +239,7 @@ struct Fibonacci<1> {
 };
 ```
 
-通过这种方式，可以在编译时计算斐波那契数列的值。
+通过这种方式，可以在编译时计算斐波那契数列的值，见[@fig:abi_dup]。
 
 ![意义不明的图片展示](assets/1280px-Linux_kernel_interfaces.svg.png){#fig:abi_dup}
 

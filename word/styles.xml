@@ -320,6 +320,7 @@
         <w:unhideWhenUsed />
         <w:rsid w:val="00D27603" />
         <w:pPr>
+            <w:keepNext />
             <w:snapToGrid w:val="0" />
             <w:spacing w:before="240" w:after="0" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
@@ -342,6 +343,7 @@
         <w:unhideWhenUsed />
         <w:rsid w:val="00D27603" />
         <w:pPr>
+            <w:keepNext />
             <w:snapToGrid w:val="0" />
             <w:spacing w:before="240" w:after="0" />
             <w:ind w:firstLineChars="0" w:firstLine="0" />
