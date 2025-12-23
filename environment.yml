@@ -1,0 +1,11 @@
+name: md2doc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12
+  - pandoc
+  - pandoc-crossref
+  - pip
+  - pip:
+    - python-docx

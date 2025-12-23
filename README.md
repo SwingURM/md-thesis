@@ -4,16 +4,26 @@
 
 pandoc, pandoc-crossref, python-docx
 
+## 使用pixi管理
 ```bash
-pandoc demo.md -o output.docx --filter pandoc-crossref --reference-doc reference.docx --citeproc --csl GB-T-7714—2015（顺序编码，双语，姓名不大写，无URL、DOI，引注有页码）.csl --bibliography cppref.bib
+pixi run --environment md2doc python header.py
+```
+
+## 使用conda管理
+```bash
+conda env create -f environment.yml
+conda activate md2doc
 python header.py
 ```
 
+## 自己管理
+自己操作吧。
+
 ## 项目文件介绍
 
-reference.docx 控制大部分段落样式。你可以修改解压后的内容，重新打包为.docx来修改。
+/reference 控制大部分段落样式。基于pandoc预生成的reference.docx解压得到，根据毕业论文要求做了修改
 
-header.py 使用python-docx进一步控制文档格式。
+header.py 重新生成reference.docx用于指导大部分段落样式。先调用pandoc，再使用python-docx进一步控制文档格式。
 
 demo.md 论文内容
 
@@ -29,12 +39,10 @@ GB-T....csl 来自Zotero中文社区，仅作少量修改
 
 - ❌致谢部分姓名和日期没做。
   
-- ⚠️公式的序号标注和引用标注仍需要你手动修正。
-
 - ⚠️参考文献格式与模板轻微不一致，已发现的是空格的显示长度（need help😖）
 
 ## TODO
-发现word段落设置里有些提到断页啥的，或许也可以利用下。
+没想好要不要为表格等一些类型的段落启用段中分页这种功能。
 
 
 

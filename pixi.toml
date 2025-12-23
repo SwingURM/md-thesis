@@ -1,0 +1,25 @@
+[workspace]
+authors = ["Swing"]
+channels = ["conda-forge"]
+name = "md-thesis"
+platforms = ["win-64"]
+version = "0.1.0"
+
+[tasks]
+
+[dependencies]
+
+[feature.md2doc]
+channels = ["conda-forge", "main"]
+
+[feature.md2doc.dependencies]
+python = "3.12.*"
+pandoc = "*"
+pandoc-crossref = "*"
+pip = "*"
+
+[feature.md2doc.pypi-dependencies]
+python-docx = "*"
+
+[environments]
+md2doc = { features = ["md2doc"], no-default-feature = true }
