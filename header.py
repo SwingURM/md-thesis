@@ -49,24 +49,6 @@ def set_page_number_style(section, fmt="decimal", start=None):
         create_attribute(pgNumType, "w:start", str(start))
     sectPr.append(pgNumType)
 
-def set_sect_properties(section):
-    sectPr = section._sectPr
-    pgSz = sectPr.find(qn("w:pgSz")) or create_element("w:pgSz")
-    create_attribute(pgSz, "w:w", "11906")
-    create_attribute(pgSz, "w:h", "16838")
-    create_attribute(pgSz, "w:code", "9")
-    sectPr.append(pgSz)
-    pgMar = sectPr.find(qn("w:pgMar")) or create_element("w:pgMar")
-    create_attribute(pgMar, "w:top", "1588")
-    create_attribute(pgMar, "w:right", "1418")
-    create_attribute(pgMar, "w:bottom", "1418")
-    create_attribute(pgMar, "w:left", "1418")
-    create_attribute(pgMar, "w:header", "1134")
-    create_attribute(pgMar, "w:footer", "1134")
-    create_attribute(pgMar, "w:gutter", "0")
-    sectPr.append(pgMar)
-
-
 
 def apply_simsun_tnr_font(run):
     """Apply SimSun font to a run."""
@@ -76,31 +58,55 @@ def apply_simsun_tnr_font(run):
     run._element.rPr.rFonts.set(qn("w:hAnsi"), "Times New Roman")
 
 
+def copy_sectPr_properties(source_sectPr, target_sectPr):
+    """Copy key page settings from source sectPr to target_sectPr."""
+    properties_to_copy = ["pgSz", "pgMar", "cols", "docGrid"]
+
+    for prop_tag in properties_to_copy:
+        source_element = source_sectPr.find(qn(f"w:{prop_tag}"))
+        if source_element is not None:
+            # Create a new element with the same tag
+            target_element = create_element(f"w:{prop_tag}")
+
+            # Copy all attributes
+            for name, value in source_element.attrib.items():
+                ns, localname = name.split("}") if "}" in name else ("", name)
+                localname = localname.split(":")[-1] if ":" in localname else localname
+                create_attribute(target_element, f"w:{localname}", value)
+
+            # Replace existing or append
+            existing = target_sectPr.find(qn(f"w:{prop_tag}"))
+            if existing is not None:
+                target_sectPr.replace(existing, target_element)
+            else:
+                target_sectPr.append(target_element)
+
+
 def add_next_page_section_break(paragraph):
     """Add a next-page section break to a paragraph."""
     assert paragraph is not None, "Paragraph cannot be None"
-
     p_element = paragraph._p
     pPr = p_element.get_or_add_pPr()
 
-    assert pPr.find(qn("w:sectPr")) is None, "Paragraph already has a sectPr"
-    sectPr = create_element("w:sectPr")
-    pPr.append(sectPr)
+    sectPr = pPr.find(qn("w:sectPr"))
+    if sectPr is None:
+        sectPr = create_element("w:sectPr")
+        pPr.append(sectPr)
+        doc = paragraph._parent.part.document
+        last_section_sectPr = doc.sections[-1]._sectPr
+        copy_sectPr_properties(last_section_sectPr, sectPr)
 
     # Set section break type to next page
     type_element = sectPr.find(qn("w:type"))
-    assert type_element is None, "Paragraph already has a type element"
-    type_element = create_element("w:type")
-    sectPr.append(type_element)
+    if type_element is None:
+        type_element = create_element("w:type")
+        sectPr.append(type_element)
     create_attribute(type_element, "w:val", "nextPage")
 
     # Clear paragraph content (as it's just a marker)
     paragraph.text = ""
-    assert len(paragraph.runs) == 1, "Paragraph must have exactly one run"
-    p_element.remove(paragraph.runs[0]._r)
-
-    print("Section break added successfully with appropriate properties")
-    return True
+    for run in paragraph.runs:
+        p_element.remove(run._r)
 
 
 def para_is_style(paragraph, style_name):
@@ -163,7 +169,7 @@ def process_document(doc):
 
     process_hyperlink(doc)
 
-    replace_figure_format_in_doc(doc)
+    replace_ref_format_in_doc(doc)
 
     force_update_fields(doc)
 
@@ -174,9 +180,9 @@ def insert_section_breaks(doc):
     """Insert section breaks at specified markers."""
 
     # find paragraphs with style "myBreak"
-    break_paragraphs = [p for p in doc.paragraphs if p.style.name.lower() == "mybreak"]
-    assert len(break_paragraphs) == 2, "目前只使用了2个分页标记，如果需要更多请修改代码"
-    assert all(map(add_next_page_section_break, break_paragraphs))
+    break_paragraphs = [p for p in doc.paragraphs if para_is_style(p, "myBreak")]
+    assert len(break_paragraphs) == 5, "目前只使用了5个分页标记，如果需要更多请修改代码"
+    deque(map(add_next_page_section_break, break_paragraphs))
 
 
 def process_table(table):
@@ -248,30 +254,33 @@ def set_all_secs(doc):
     num_sections = len(doc.sections)
     print(f"Document contains {num_sections} sections.")
 
-    assert num_sections == 3, "Document must have at least 2 sections."
+    assert num_sections == 6, "Document must have at least 6 sections."
 
-    # Section 1: Before TOC
+    # Section 1,2: Before TOC
     section1 = doc.sections[0]
     section1.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
     set_page_number_style(section1, fmt="upperRoman", start=1)
     add_page_number_to_footer(section1)
-    set_sect_properties(section1)
-    
 
-    # Section 2: TOC
     section2 = doc.sections[1]
     section2.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
-    section2.footer.is_linked_to_previous = False
-    set_page_number_style(section2, fmt="upperRoman", start=1)
-    add_page_number_to_footer(section2)
-    set_sect_properties(section2)
+    set_page_number_style(section2, fmt="upperRoman")
 
-    # Section 3: After TOC
+
+    # Section 3: TOC
     section3 = doc.sections[2]
     section3.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
     section3.footer.is_linked_to_previous = False
-    set_page_number_style(section3, fmt="decimal", start=1)
-    set_sect_properties(section3)
+    set_page_number_style(section3, fmt="upperRoman", start=1)
+    add_page_number_to_footer(section3)
+
+    # Section 4: After TOC
+    section4 = doc.sections[3]
+    section4.footer.is_linked_to_previous = False
+    set_page_number_style(section4, fmt="decimal", start=1)
+    for i in range(3, 6):
+        section = doc.sections[i]
+        section.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
 
 
 def set_headers(doc):
@@ -293,9 +302,9 @@ def set_headers(doc):
             run.clear()
 
         # Add header content
-        if i < 2:  # First two sections
+        if i < 3:  # First 3 sections
             paragraph.add_run(TITLE + " ")
-        else:  # Third section and beyond
+        else:  # Fourth section and beyond
             run = paragraph.add_run(TITLE + " ")
 
             # Add page number field
@@ -363,18 +372,20 @@ def set_abstract_font(doc):
     print("=== Completed processing abstract paragraphs ===\n")
 
 
-def replace_figure_format_in_doc(doc):
+def replace_ref_format_in_doc(doc):
     """
     Replace all occurrences of '图%d.%d' with '图%d-%d' in the entire Word document
     while preserving oMath elements and other formatting.
     """
     figure_pattern = re.compile(r"图(\d+)\.(\d+)")
+    eqn_pattern = re.compile(r"式(\d+)\.(\d+)")
 
     for paragraph in doc.paragraphs:
         # Process the paragraph run by run to preserve formatting
         for run in paragraph.runs:
-            if run.text and "图" in run.text:
+            if run.text and ("图" in run.text or "式" in run.text):
                 run.text = figure_pattern.sub(r"图\1-\2", run.text)
+                run.text = eqn_pattern.sub(r"式\1-\2", run.text)
 
 
 def process_math_equations(doc):
@@ -532,7 +543,7 @@ def fix_reference_format(doc):
             continue
         if not is_reference_section:
             continue
-        if is_reference_section and para_is_style(paragraph, "heading 1"):
+        if is_reference_section and para_is_style(paragraph, "myBreak"):
             return
         assert paragraph.runs and len(paragraph.runs) >= 1, (
             "Reference paragraph must have at least one run"
