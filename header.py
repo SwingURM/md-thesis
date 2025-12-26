@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+from collections import deque
 
 from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
@@ -41,12 +42,30 @@ def add_page_number_field(paragraph):
 def set_page_number_style(section, fmt="decimal", start=None):
     """Set page number format and starting number for a section."""
     sectPr = section._sectPr
-    pgNumType = sectPr.find(qn("w:pgNumType")) or create_element("w:pgNumType")
+    assert sectPr.find(qn("w:pgNumType")) is None, "Section already has pgNumType"
+    pgNumType = create_element("w:pgNumType")
     create_attribute(pgNumType, "w:fmt", fmt)
     if start is not None:
         create_attribute(pgNumType, "w:start", str(start))
-    if pgNumType not in sectPr:
-        sectPr.append(pgNumType)
+    sectPr.append(pgNumType)
+
+def set_sect_properties(section):
+    sectPr = section._sectPr
+    pgSz = sectPr.find(qn("w:pgSz")) or create_element("w:pgSz")
+    create_attribute(pgSz, "w:w", "11906")
+    create_attribute(pgSz, "w:h", "16838")
+    create_attribute(pgSz, "w:code", "9")
+    sectPr.append(pgSz)
+    pgMar = sectPr.find(qn("w:pgMar")) or create_element("w:pgMar")
+    create_attribute(pgMar, "w:top", "1588")
+    create_attribute(pgMar, "w:right", "1418")
+    create_attribute(pgMar, "w:bottom", "1418")
+    create_attribute(pgMar, "w:left", "1418")
+    create_attribute(pgMar, "w:header", "1134")
+    create_attribute(pgMar, "w:footer", "1134")
+    create_attribute(pgMar, "w:gutter", "0")
+    sectPr.append(pgMar)
+
 
 
 def apply_simsun_tnr_font(run):
@@ -55,35 +74,6 @@ def apply_simsun_tnr_font(run):
     run._element.rPr.rFonts.set(qn("w:eastAsia"), "SimSun")
     run._element.rPr.rFonts.set(qn("w:ascii"), "Times New Roman")
     run._element.rPr.rFonts.set(qn("w:hAnsi"), "Times New Roman")
-
-
-def copy_sectPr_properties(source_sectPr, target_sectPr):
-    """Copy key page settings from source sectPr to target_sectPr."""
-    print("  Starting property copying...")
-    properties_to_copy = ["pgSz", "pgMar", "cols", "docGrid"]
-
-    for prop_tag in properties_to_copy:
-        source_element = source_sectPr.find(qn(f"w:{prop_tag}"))
-        if source_element is not None:
-            # Create a new element with the same tag
-            target_element = create_element(f"w:{prop_tag}")
-
-            # Copy all attributes
-            for name, value in source_element.attrib.items():
-                ns, localname = name.split("}") if "}" in name else ("", name)
-                localname = localname.split(":")[-1] if ":" in localname else localname
-                create_attribute(target_element, f"w:{localname}", value)
-
-            # Replace existing or append
-            existing = target_sectPr.find(qn(f"w:{prop_tag}"))
-            if existing is not None:
-                target_sectPr.replace(existing, target_element)
-            else:
-                target_sectPr.append(target_element)
-
-            print(f"  ✓ Copied {prop_tag} settings")
-
-    print("  Property copying complete")
 
 
 def add_next_page_section_break(paragraph):
@@ -113,9 +103,9 @@ def add_next_page_section_break(paragraph):
     return True
 
 
-def is_abstract_paragraph(paragraph):
+def para_is_style(paragraph, style_name):
     """Check if a paragraph is an abstract paragraph."""
-    return paragraph.style.name.lower() == "abstract"
+    return paragraph.style.name.lower() == style_name.lower()
 
 
 def add_toc(document):
@@ -124,7 +114,7 @@ def add_toc(document):
     """
     # find all the paragraph with style toc Heading
     target_paragraphs = [
-        p for p in document.paragraphs if p.style.name.lower() == "toc heading"
+        p for p in document.paragraphs if para_is_style(p, "toc heading")
     ]
     assert len(target_paragraphs) == 1, (
         "The document must contain exactly one paragraph with the style 'TOC Heading'."
@@ -157,14 +147,13 @@ def add_toc(document):
 def process_document(doc):
     """Process the Word document."""
 
-    for table in doc.tables:
-        process_table(table)
+    deque(map(process_table, doc.tables))
 
     add_toc(doc)
 
     insert_section_breaks(doc)
 
-    set_page_number_for_all_secs(doc)
+    set_all_secs(doc)
 
     set_headers(doc)
 
@@ -172,11 +161,13 @@ def process_document(doc):
 
     process_math_equations(doc)
 
-    style_superscript_hyperlinks(doc)
+    process_hyperlink(doc)
 
     replace_figure_format_in_doc(doc)
 
     force_update_fields(doc)
+
+    fix_reference_format(doc)
 
 
 def insert_section_breaks(doc):
@@ -185,8 +176,7 @@ def insert_section_breaks(doc):
     # find paragraphs with style "myBreak"
     break_paragraphs = [p for p in doc.paragraphs if p.style.name.lower() == "mybreak"]
     assert len(break_paragraphs) == 2, "目前只使用了2个分页标记，如果需要更多请修改代码"
-    for p in break_paragraphs:
-        assert add_next_page_section_break(p)
+    assert all(map(add_next_page_section_break, break_paragraphs))
 
 
 def process_table(table):
@@ -233,9 +223,9 @@ def process_table(table):
 
     # Apply style to the first row
     first_row = table.rows[0]  # Get the first row
-    for cell in first_row.cells:
-        tcPr = cell._element.get_or_add_tcPr()  # Get or create cell properties
 
+    def set_cell_style(cell):
+        tcPr = cell._element.get_or_add_tcPr()  # Get or create cell properties
         # Set bottom border
         tcBorders = create_element("w:tcBorders")
         bottomBorder = create_element("w:bottom")
@@ -246,13 +236,14 @@ def process_table(table):
         tcBorders.append(bottomBorder)
         tcPr.append(tcBorders)
 
-    # Set column width and apply paragraph and text style
+    deque(map(set_cell_style, first_row.cells))
+
     for column in table.columns:
         for cell in column.cells:
             cell.width = Pt(column_width_twips / 20)  # Convert to points
 
 
-def set_page_number_for_all_secs(doc):
+def set_all_secs(doc):
     """Apply formatting to document sections."""
     num_sections = len(doc.sections)
     print(f"Document contains {num_sections} sections.")
@@ -264,6 +255,8 @@ def set_page_number_for_all_secs(doc):
     section1.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
     set_page_number_style(section1, fmt="upperRoman", start=1)
     add_page_number_to_footer(section1)
+    set_sect_properties(section1)
+    
 
     # Section 2: TOC
     section2 = doc.sections[1]
@@ -271,12 +264,14 @@ def set_page_number_for_all_secs(doc):
     section2.footer.is_linked_to_previous = False
     set_page_number_style(section2, fmt="upperRoman", start=1)
     add_page_number_to_footer(section2)
+    set_sect_properties(section2)
 
     # Section 3: After TOC
     section3 = doc.sections[2]
     section3.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
     section3.footer.is_linked_to_previous = False
     set_page_number_style(section3, fmt="decimal", start=1)
+    set_sect_properties(section3)
 
 
 def set_headers(doc):
@@ -329,7 +324,8 @@ def set_headers(doc):
 def add_page_number_to_footer(section):
     """Add page number to the footer of a section."""
     footer = section.footer
-    paragraph = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+    assert len(footer.paragraphs) == 1, "Footer must contain a existing paragraph"
+    paragraph = footer.paragraphs[0]
     paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     paragraph.style = "footer"
     add_page_number_field(paragraph)
@@ -339,7 +335,7 @@ def set_abstract_font(doc):
     """Set the font for all abstract paragraphs."""
     print("\n=== Processing abstract paragraphs ===")
     for paragraph in doc.paragraphs:
-        if is_abstract_paragraph(paragraph):
+        if para_is_style(paragraph, "abstract"):
             text = paragraph.text.strip()
             if text.startswith("关键词："):
                 prefix = "关键词："
@@ -469,92 +465,95 @@ def format_math_paragraph(paragraph, equation_number="replace_me"):
         return False
 
 
-def style_superscript_hyperlinks(doc, style_name="ae"):
+def process_hyperlink(doc):
     """
-    Find all hyperlinked text that is also superscript and apply a specific style.
-
-    Args:
-        doc: The Word document
-        style_name: The style to apply to superscript hyperlinks
+    取消文档中非上标的所有超链接,上标的超链接设置特定样式
     """
-    print("\n=== IDENTIFYING AND STYLING SUPERSCRIPT HYPERLINKS ===")
-    count = 0
+    print("\n=== PROCESSING HYPERLINKS ===")
+    count1 = 0
+    count2 = 0
 
-    # Iterate through all paragraphs in the document
+    # 遍历所有段落
     for paragraph in doc.paragraphs:
-        # Get the XML of the paragraph
         p_xml = paragraph._element
 
-        # Find all hyperlinks in this paragraph
-        hyperlinks = p_xml.findall(
-            ".//w:hyperlink",
-            namespaces={
-                "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-            },
-        )
-
-        for hyperlink in hyperlinks:
-            # Find runs within this hyperlink
-            runs_in_link = hyperlink.findall(
-                ".//w:r",
-                namespaces={
-                    "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-                },
+        for hyperlink in p_xml.xpath(".//w:hyperlink"):
+            assert len(hyperlink.xpath(".//w:r")) == 1, (
+                "Hyperlink must contain exactly one run"
             )
+            r = hyperlink.xpath(".//w:r")[0]
+            parent = hyperlink.getparent()
 
-            for run_xml in runs_in_link:
-                # Check if this run has superscript formatting
-                rPr = run_xml.find(
-                    ".//w:rPr",
-                    namespaces={
-                        "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-                    },
+            assert r.tag.endswith("r"), "Child of hyperlink must be a run"
+            assert r.rPr is not None, "Run must have rPr"
+            vertAlign = r.rPr.xpath(".//w:vertAlign[@w:val='superscript']")
+            if vertAlign:
+                count2 += 1
+                text_element = r.xpath(".//w:t")
+                assert len(text_element) == 1, (
+                    "Run must contain exactly one text element"
                 )
-                if rPr is not None:
-                    vert_align = rPr.find(
-                        ".//w:vertAlign[@w:val='superscript']",
-                        namespaces={
-                            "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-                        },
-                    )
+                text_content = text_element[0].text
+                style_element = create_element("w:rStyle")
+                create_attribute(style_element, "w:val", "ae")
+                assert r.rPr.rStyle.val == "af", (
+                    "Run must have style 'af' before replacing"
+                )
+                r.rPr.replace(r.rPr.rStyle, style_element)
+                statistics_data[text_content] = statistics_data.get(text_content, 0) + 1
+            else:
+                count1 += 1
+                r.remove(r.rPr)
+                parent.insert(parent.index(hyperlink), r)
 
-                    if vert_align is not None:
-                        # This run is both hyperlinked and superscript!
-                        count += 1
-
-                        # Get the text content for logging
-                        text_elements = run_xml.findall(
-                            ".//w:t",
-                            namespaces={
-                                "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-                            },
-                        )
-                        text_content = "".join(
-                            [t.text for t in text_elements if t.text]
-                        )
-
-                        # Apply the specified style
-                        style_element = create_element("w:rStyle")
-                        create_attribute(style_element, "w:val", style_name)
-
-                        # Add or replace the style in the run properties
-                        existing_style = rPr.find(
-                            ".//w:rStyle",
-                            namespaces={
-                                "w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
-                            },
-                        )
-                        assert existing_style is not None, (
-                            "Run properties must contain rStyle"
-                        )
-                        rPr.replace(existing_style, style_element)
-
-                        statistics_data[text_content] = (
-                            statistics_data.get(text_content, 0) + 1
-                        )
+                parent.remove(hyperlink)
 
     print(
-        f"\n=== COMPLETED: Styled {count} superscript hyperlinks with '{style_name}' style ===\n"
+        f"Total hyperlinks removed: {count1 + count2}, Non-superscript hyperlinks removed: {count1}, Superscript hyperlinks retained: {count2}"
+    )
+
+
+def has_chinese(text):
+    return bool(re.search(r"[\u4e00-\u9fff]", text.replace("等", "")))
+
+
+def fix_reference_format(doc):
+    print("\n=== FIXING REFERENCE FORMATTING ===")
+    is_reference_section = False
+    ref_ch = 0
+    ref_en = 0
+    ref_fixed = 0
+    for paragraph in doc.paragraphs:
+        if (
+            para_is_style(paragraph, "heading 1")
+            and paragraph.text.strip() == "参考文献"
+        ):
+            is_reference_section = True
+            continue
+        if not is_reference_section:
+            continue
+        if is_reference_section and para_is_style(paragraph, "heading 1"):
+            return
+        assert paragraph.runs and len(paragraph.runs) >= 1, (
+            "Reference paragraph must have at least one run"
+        )
+        run1 = paragraph.runs[0]
+        if not run1.text.startswith("["):
+            continue
+        if has_chinese(paragraph.text):
+            ref_ch += 1
+            continue
+        ref_en += 1
+
+        def etal_replace(run):
+            nonlocal ref_fixed
+            if run.text == "等.":
+                run.text = "et al."
+                ref_fixed += 1
+
+        deque(map(etal_replace, paragraph.runs))
+    print(
+        f"Total references processed: {ref_ch + ref_en}, Chinese references: {ref_ch}, English references: {ref_en}, '等.' replaced with 'et al.': {ref_fixed}"
     )
 
 

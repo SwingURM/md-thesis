@@ -835,6 +835,7 @@
             <w:szCs w:val="21" />
         </w:rPr>
     </w:style>
+    <!-- 2级目录 -->
     <w:style w:type="paragraph" w:styleId="22">
         <w:name w:val="TOC 2" />
         <w:basedOn w:val="a" />
@@ -853,12 +854,13 @@
             <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
+            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
             <w:noProof />
-            <w:kern w:val="0" />
+            <w:kern w:val="2" />
             <w:szCs w:val="24" />
         </w:rPr>
     </w:style>
+    <!-- 1级目录 -->
     <w:style w:type="paragraph" w:styleId="11">
         <w:name w:val="TOC 1" />
         <w:basedOn w:val="a" />
@@ -877,13 +879,14 @@
             <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
+            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
             <w:noProof />
-            <w:kern w:val="0" />
+            <w:kern w:val="2" />
             <w:sz w:val="28" />
             <w:szCs w:val="28" />
         </w:rPr>
     </w:style>
+    <!-- 3级目录 -->
     <w:style w:type="paragraph" w:styleId="33">
         <w:name w:val="TOC 3" />
         <w:basedOn w:val="a" />
@@ -902,9 +905,9 @@
             <w:jc w:val="left" />
         </w:pPr>
         <w:rPr>
-            <w:rFonts w:ascii="Times New Roman" w:eastAsia="黑体" w:hAnsi="Times New Roman" />
+            <w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" />
             <w:noProof />
-            <w:kern w:val="0" />
+            <w:kern w:val="2" />
             <w:sz w:val="21" />
             <w:szCs w:val="21" />
         </w:rPr>
