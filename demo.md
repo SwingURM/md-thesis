@@ -12,8 +12,8 @@ C++模板元编程（Template Metaprogramming）是一种利用C++模板系统�
 
 :::
 
-:::{custom-style="myBreak"}
-我是一个分页符
+:::{custom-style="pBreak"}
+| 我是一个分页符
 :::
 
 # **Abstract**{-}
@@ -27,16 +27,16 @@ mole.
 :::
 
 
-:::{custom-style="myBreak"}
-我是一个分页符
+:::{custom-style="pBreak"}
+| 我是一个分页符
 :::
 
 :::{custom-style="TOC Heading"}
-我是目录
+| 我是目录
 :::
 
-:::{custom-style="myBreak"}
-我是一个分页符
+:::{custom-style="pBreak"}
+| 我是一个分页符
 :::
 
 # 什么是模板元编程？
@@ -251,8 +251,8 @@ struct Fibonacci<1> {
 
 C++模板元编程是一种强大的编程技术，能够在编译时进行高效的计算和类型推导，提升程序的性能和可维护性。通过模板特化、SFINAE、递归模板等技巧，开发者可以实现更加复杂和高效的编程模式。然而，模板元编程的复杂性也意味着它需要较高的学习曲线。掌握它的应用对于编写高效、通用和可扩展的C++代码至关重要。
 
-:::{custom-style="myBreak"}
-我是一个分页符
+:::{custom-style="pBreak"}
+| 我是一个分页符
 :::
 
 # 参考文献{-}
@@ -260,8 +260,8 @@ C++模板元编程是一种强大的编程技术，能够在编译时进行高�
 ::: {#refs}
 :::
 
-:::{custom-style="myBreak"}
-我是一个奶龙
+:::{custom-style="pBreak"}
+| 我是一个奶龙
 :::
 
 # 致谢{-}

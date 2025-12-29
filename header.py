@@ -3,14 +3,20 @@ import re
 import shutil
 from collections import deque
 
-from docx import Document
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Pt
 
-TITLE = "面向优秀论文标准的研究"
+title = "面向优秀论文标准的研究"
 statistics_data = {}
+
+
+def update_reference_doc():
+    shutil.make_archive("reference", "zip", "reference")
+    if os.path.exists("reference.docx"):
+        os.remove("reference.docx")
+    os.rename("reference.zip", "reference.docx")
 
 
 # --- Helper Functions ---
@@ -149,40 +155,28 @@ def add_toc(document):
         print(f"Error during TOC insertion: {e}")
 
 
-# --- Main Processing ---
-def process_document(doc):
-    """Process the Word document."""
-
-    deque(map(process_table, doc.tables))
-
-    add_toc(doc)
-
-    insert_section_breaks(doc)
-
-    set_all_secs(doc)
-
-    set_headers(doc)
-
-    set_abstract_font(doc)
-
-    process_math_equations(doc)
-
-    process_hyperlink(doc)
-
-    replace_ref_format_in_doc(doc)
-
-    force_update_fields(doc)
-
-    fix_reference_format(doc)
-
-
-def insert_section_breaks(doc):
+def insert_section_breaks(doc, num):
     """Insert section breaks at specified markers."""
 
     # find paragraphs with style "myBreak"
-    break_paragraphs = [p for p in doc.paragraphs if para_is_style(p, "myBreak")]
-    assert len(break_paragraphs) == 5, "目前只使用了5个分页标记，如果需要更多请修改代码"
+    break_paragraphs = [p for p in doc.paragraphs if para_is_style(p, "pBreak")]
+    assert len(break_paragraphs) == num, (
+        f"The document must contain exactly {num} paragraphs with the style 'pBreak', found {len(break_paragraphs)}.")
     deque(map(add_next_page_section_break, break_paragraphs))
+
+def pageBreak_before(paragraph):
+    """Set page break before and w:after for each heading 1."""
+    """this is for thesis only"""
+    if not para_is_style(paragraph, "heading 1"):
+        return
+    pPr = paragraph._element.get_or_add_pPr()
+    pageBreak = create_element("w:pageBreakBefore")
+    create_attribute(pageBreak, "w:val", "true")
+    w_after = create_element("w:spacing")
+    create_attribute(w_after, "w:after", "240")
+    pPr.append(w_after)
+    pPr.append(pageBreak)
+
 
 
 def process_table(table):
@@ -249,7 +243,7 @@ def process_table(table):
             cell.width = Pt(column_width_twips / 20)  # Convert to points
 
 
-def set_all_secs(doc):
+def set_all_secs_thesis(doc):
     """Apply formatting to document sections."""
     num_sections = len(doc.sections)
     print(f"Document contains {num_sections} sections.")
@@ -265,7 +259,6 @@ def set_all_secs(doc):
     section2 = doc.sections[1]
     section2.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
     set_page_number_style(section2, fmt="upperRoman")
-
 
     # Section 3: TOC
     section3 = doc.sections[2]
@@ -283,11 +276,60 @@ def set_all_secs(doc):
         section.footer_distance = Pt(56.7)  # Footer distance from the bottom (2 cm)
 
 
-def set_headers(doc):
+def set_all_secs_other(doc):
+    """Apply formatting to document sections."""
+    num_sections = len(doc.sections)
+    print(f"Document contains {num_sections} sections.")
+
+    assert num_sections == 2, "Document must have 2 sections."
+
+    section1 = doc.sections[0]
+    set_page_number_style(section1, fmt="decimal", start=1)
+
+def set_headers_other(doc):
+    """
+    Set headers for the only sections in the document.
+    """
+    assert len(doc.sections) == 2, "Document must have exactly 2 section."
+    section = doc.sections[0]
+    section.header.is_linked_to_previous = False
+    # Get the header of the section
+    header = section.header
+    assert len(header.paragraphs) == 1, "Header must contain one paragraph"
+    paragraph = header.paragraphs[0]
+    # Clear existing content in the paragraph
+    for run in paragraph.runs:
+        run.clear()
+    # Add header content
+    run = paragraph.add_run(title + " ")
+    run_append_page_number(run)
+    # Set paragraph style
+    paragraph.style = "header"  # Ensure the style name is correct
+    # Set header distance
+    section.header_distance = Pt(56.7)  # Header distance from the top (2 cm)
+    
+
+def run_append_page_number(run):
+    # Add page number field
+    fldChar1 = OxmlElement("w:fldChar")
+    fldChar1.set(qn("w:fldCharType"), "begin")
+    run._r.append(fldChar1)
+
+    instrText = OxmlElement("w:instrText")
+    instrText.set(qn("xml:space"), "preserve")  # Avoid truncation of field instructions
+    instrText.text = "PAGE \\* MERGEFORMAT"
+    run._r.append(instrText)
+
+    fldChar2 = OxmlElement("w:fldChar")
+    fldChar2.set(qn("w:fldCharType"), "end")
+    run._r.append(fldChar2)
+
+
+def set_headers_thesis(doc):
     """
     Set headers for all sections in the document.
-    - First two sections: Header without page numbers.
-    - Third section: Header with page numbers.
+    - First 3 sections: Header without page numbers.
+    - Following section: Header with page numbers.
     """
     for i, section in enumerate(doc.sections):
         section.header.is_linked_to_previous = False
@@ -303,25 +345,10 @@ def set_headers(doc):
 
         # Add header content
         if i < 3:  # First 3 sections
-            paragraph.add_run(TITLE + " ")
+            paragraph.add_run(title + " ")
         else:  # Fourth section and beyond
-            run = paragraph.add_run(TITLE + " ")
-
-            # Add page number field
-            fldChar1 = OxmlElement("w:fldChar")
-            fldChar1.set(qn("w:fldCharType"), "begin")
-            run._r.append(fldChar1)
-
-            instrText = OxmlElement("w:instrText")
-            instrText.set(
-                qn("xml:space"), "preserve"
-            )  # Avoid truncation of field instructions
-            instrText.text = "PAGE \\* MERGEFORMAT"
-            run._r.append(instrText)
-
-            fldChar2 = OxmlElement("w:fldChar")
-            fldChar2.set(qn("w:fldCharType"), "end")
-            run._r.append(fldChar2)
+            run = paragraph.add_run(title + " ")
+            run_append_page_number(run)
 
         # Set paragraph style
         paragraph.style = "header"  # Ensure the style name is correct
@@ -339,6 +366,18 @@ def add_page_number_to_footer(section):
     paragraph.style = "footer"
     add_page_number_field(paragraph)
 
+def split_by_colon(text):
+    assert ':' in text or '：' in text, (
+        "Abstract paragraph must contain '：' or ':' to separate prefix and content")
+    # 尝试用英文冒号分割
+    if ':' in text:
+        parts = text.split(':', 1)  # 只分割第一个冒号
+        return parts[0].strip() + ':', parts[1].strip()
+    
+    # 尝试用中文冒号分割
+    if '：' in text:
+        parts = text.split('：', 1)  # 只分割第一个冒号
+        return parts[0].strip() + "：", parts[1].strip()
 
 def set_abstract_font(doc):
     """Set the font for all abstract paragraphs."""
@@ -346,27 +385,18 @@ def set_abstract_font(doc):
     for paragraph in doc.paragraphs:
         if para_is_style(paragraph, "abstract"):
             text = paragraph.text.strip()
-            if text.startswith("关键词："):
-                prefix = "关键词："
-            elif text.lower().startswith("keywords:"):
-                prefix = "Keywords:"
-            else:
-                print(
-                    f"Warning: Abstract paragraph with unexpected format: '{text[:20]}...'"
-                )
-                continue
+            part1, part2 = split_by_colon(text)
 
-            print(f"Processing abstract paragraph: '{text[:30]}...'")
+            print(f"Processing '{part1}...'")
             paragraph.clear()
 
             # Add prefix with bold formatting
-            run_prefix = paragraph.add_run(prefix)
-            if prefix == "Keywords:":
+            run_prefix = paragraph.add_run(part1)
+            if part1 == "Keywords:":
                 run_prefix.bold = True  # Apply bold to the prefix
 
             # Add the remaining text with appropriate font
-            remaining = text[len(prefix) :]
-            run_rest = paragraph.add_run(remaining)
+            run_rest = paragraph.add_run(part2)
             apply_simsun_tnr_font(run_rest)
 
     print("=== Completed processing abstract paragraphs ===\n")
@@ -543,7 +573,7 @@ def fix_reference_format(doc):
             continue
         if not is_reference_section:
             continue
-        if is_reference_section and para_is_style(paragraph, "myBreak"):
+        if is_reference_section and para_is_style(paragraph, "pBreak"):
             return
         assert paragraph.runs and len(paragraph.runs) >= 1, (
             "Reference paragraph must have at least one run"
@@ -574,27 +604,3 @@ def force_update_fields(doc):
     update_fields = OxmlElement("w:updateFields")
     update_fields.set(qn("w:val"), "true")
     element.append(update_fields)
-
-
-# --- Entry Point ---
-if __name__ == "__main__":
-    INPUT = "demo.md"
-    REF_FILE = "cppref.bib"
-    output = f"{TITLE}-generated.docx"
-
-    shutil.make_archive("reference", "zip", "reference")
-    if os.path.exists("reference.docx"):
-        os.remove("reference.docx")
-    os.rename("reference.zip", "reference.docx")
-    assert (
-        os.system(
-            f"pandoc {INPUT} -o {output} --filter pandoc-crossref --reference-doc reference.docx --citeproc --csl GB-T-7714—2015（顺序编码，双语，姓名不大写，无URL、DOI，引注有页码）.csl --bibliography {REF_FILE}"
-        )
-        == 0
-    ), "pandoc execution failed"
-
-    doc = Document(output)
-    assert doc is not None, "Failed to load the document"
-    process_document(doc)
-    doc.save(output)
-    print("Output file saved as:", output)

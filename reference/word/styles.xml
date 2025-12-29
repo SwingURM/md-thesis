@@ -296,9 +296,10 @@
         <w:uiPriority w:val="9" />
         <w:rsid w:val="00DE7F4A" />
         <w:pPr>
-            <w:pageBreakBefore />
+            <w:keepNext />
+            <w:keepLines />
             <w:snapToGrid w:val="0" />
-            <w:spacing w:before="240" w:after="240" />
+            <w:spacing w:before="240"/>
             <w:ind w:firstLineChars="0" w:firstLine="0" />
             <w:jc w:val="center" />
             <w:outlineLvl w:val="0" />
@@ -910,6 +911,21 @@
             <w:kern w:val="2" />
             <w:sz w:val="21" />
             <w:szCs w:val="21" />
+        </w:rPr>
+    </w:style>
+    <w:style w:type="paragraph" w:customStyle="1" w:styleId="pNameClass">
+        <w:name w:val="pNameClass" />
+        <w:basedOn w:val="a" />
+        <w:qFormat />
+        <w:pPr>
+            <w:ind w:firstLineChars="0" w:firstLine="0" />
+            <w:snapToGrid w:val="0" />
+            <w:spacing w:after="240" />
+            <w:jc w:val="center" />
+        </w:pPr>
+        <w:rPr>
+            <w:rFonts w:eastAsia="黑体" />
+            <w:sz w:val="28" />
         </w:rPr>
     </w:style>
 </w:styles>
